@@ -1,0 +1,24 @@
+{
+  "name": "google-authentication",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simran1002/Google-Authentication.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/simran1002/Google-Authentication/issues"
+  },
+  "homepage": "https://github.com/simran1002/Google-Authentication#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^6.7.4"
+  }
+}
