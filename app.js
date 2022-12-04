@@ -2,7 +2,6 @@ require('dotenv').config();
 const express=require("express");
 const cookieParser = require('cookie-parser');
 const path=require("path");
-const hbs=require("hbs");
 const bcrypt=require("bcrypt");
 const jwt=require("jsonwebtoken");
 const app=express();
@@ -19,7 +18,7 @@ app.use(express.urlencoded({extended:false}));
 app.use(express.static(static_path));
 app.use(cookieParser());
 
-app.set("view engine","hbs");
+app.set("view engine","register");
 app.set("views",views_path);
 
 app.get("/",(req,res)=>{

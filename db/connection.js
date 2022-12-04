@@ -2,7 +2,7 @@ const express=require("express");
 const mongoose=require("mongoose");
 const app=express();
 
-mongoose.connect("mongodb+srv://prakhar7017:mongodb123@cluster0.87ultwo.mongodb.net/fruitsDB?retryWrites=true&w=majority",{
+mongoose.connect("mongodb+srv://newcluster:Simran10@newcluster.3c8d49a.mongodb.net/?retryWrites=true&w=majority",{
   useNewUrlParser:true,
   useUnifiedTopology:true
 }).then(()=>{
