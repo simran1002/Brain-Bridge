@@ -43,14 +43,45 @@ app.post('/login',(req,res) => {
   catch(console.error);
 })
 
-app.get('/profile', (req, res)=>{
+app.get('/dashboard', checkAuthenticated, (req, res)=>{
     let user = req.user;
-    res.render('profile', {user});
+    res.render('dashboard', {user});
 })
 
 app.get('/protectedroute', (req,res)=>{
     res.render('protectedroute.ejs');
 })
+
+app.get('/logout',(req,res)=>{
+    res.clearCookie('session-token');
+    res.redirect('/login')
+})
+
+function checkAuthenticated(req, res, next){
+
+    let token = req.cookies['session-token'];
+
+    let user = {};
+    async function verify() {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+        });
+        const payload = ticket.getPayload();
+        user.name = payload.name;
+        user.email = payload.email;
+        user.picture = payload.picture;
+      }
+      verify()
+      .then(()=>{
+          req.user = user;
+          next();
+      })
+      .catch(err=>{
+          res.redirect('/login')
+      })
+
+}
 
 
 app.listen(PORT,() => {
