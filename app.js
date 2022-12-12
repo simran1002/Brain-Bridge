@@ -2,8 +2,8 @@ const cookieParser = require('cookie-parser');
 const express = require('express')
 const passport = require('passport')
 const app = express()
-const PORT = process.env.PORT || 5000;
-const { connectMongoose, User } = require("./db/connection.js");
+const PORT = process.env.PORT || 5000
+const { connectMongoose, User } = require("./source/db/connection.js");
 connectMongoose();
 
 
