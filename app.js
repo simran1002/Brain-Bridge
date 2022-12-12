@@ -3,6 +3,9 @@ const express = require('express')
 const passport = require('passport')
 const app = express()
 const PORT = process.env.PORT || 5000;
+const { connectMongoose, User } = require("./db/connection.js");
+connectMongoose();
+
 
 //google auth
 const {OAuth2Client} = require('google-auth-library');
