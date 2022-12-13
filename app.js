@@ -8,15 +8,17 @@ const PORT = process.env.PORT || 5000
 const session = require('express-session');
 require("./passport-setup");
 
-
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 // After you declare "app"
-app.use(session({ secret: 'melody hensley is my spirit animal' }));
+//app.use(session({ secret: 'melody hensley is my spirit animal' }));
 // Authentication configuration
 app.use(session({
-    resave: false,
-    saveUninitialized: true,
-    secret: 'bla bla bla' 
+ resave: false,
+ saveUninitialized: true,
+  secret: 'bla bla bla' 
   }));
 //google auth
 const {OAuth2Client} = require('google-auth-library');
@@ -43,15 +45,16 @@ app.get('/pages/login',(req,res) => {
 })
 
 app.get('/success',(req,res) => {
-    res.render("pages/success")
+    res.render("pages/register")
 })
 
 app.get("/google",passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
 app.get("/google/callback",passport.authenticate("google", { failureRedirect: "/failed" }),
-  function(req,res){
-      res.redirect("/success");
+    function(req,res){
+      res.redirect("/register");
+     // res.send("success")
     }  
 );
 
