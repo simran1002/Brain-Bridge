@@ -225,25 +225,13 @@ a:hover {
    </head>
 <body>
 
-  <div class="split left">
-    <div class="centered">
-      
-      
-      
-      <a class="btn" href="#">
-        <span>Make Payments</span>
-      </a><a class="btn" href="#">
-        <span>Review and Submit</span>
-      </a>
-    </div>
-  </div>
+ 
 
-  <div class="split right">
-    <div class="centered">
+ 
       <div class="container">
         <div class="title">Registration</div>
         <div class="content">
-          <form action="#">
+          <form id="msform" action="/add/registered/user" method="post">
             <div class="user-details">
               <div class="input-box">
                 <span class="details">Name</span>
@@ -278,10 +266,15 @@ a:hover {
                 <span class="details">Payment of Rs.500 </span>
                 <input type="checkbox" class="details" >
               </div>
-              
+              <a class="btn" href="/payment">
+                    <span>Make Payments</span>
+                  </a><a class="btn" href="/success">
+                    <span>Review and Submit</span> 
+                  </a>
+                </div>
+              </div>
             </div>
-            <a href="#" class="previous"> BACK</a>
-            <a href="#" class="next">NEXT</a>    
+               
           </form>
         </div>
       </div>
