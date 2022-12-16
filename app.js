@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer");
 const path = require("path");
 const ejs = require("ejs");
 const passport = require("passport");
@@ -10,7 +10,6 @@ const Razorpay = require("razorpay");
 const cors = require("cors");
 const { nextTick } = require("process");
 const { updateMany, updateOne, update } = require("./source/model/schema");
-const transpoter=require("./source/model/email");
 const jwt=require("jsonwebtoken");
 const cookieParser=require("cookie-parser");
 const app = express()
@@ -18,6 +17,13 @@ const PORT = process.env.PORT || 5000
 const session = require("express-session");
 const schema = require("./source/model/schema");
 require("./source/db/connection");
+
+
+const nodemailer = require("nodemailer");
+ 
+const CLIENT_ID = "277985285628-560of7ar2drp5dl57go9sphegm3int6n.apps.googleusercontent.com";
+ 
+const CLIENT_SECRET = "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";
 
 
 
@@ -71,7 +77,21 @@ app.get('/pages/login',(req,res) => {
 })
 
 app.get('/success',(req,res) => {
-    res.render("pages/register")
+  // console.log(req.user.email)
+  // console.log(req.user.name.givenName + " " + req.user.name.familyName)
+  // console.log(req.user.picture)
+  if(req.isAuthenticated()) {
+    const userDetails = {
+      email: req.user.email,
+      name: req.user.name.givenName + " " + req.user.name.familyName,
+      profileURL: req.user.picture
+    }
+    res.render("pages/register", {userDetailsNew: userDetails})
+  } else {
+    res.redirect("/")
+  }
+    // console.log(req.user)
+    // res.render("pages/register")
 })
 
 app.get("/google",passport.authenticate("google", { scope: ["profile", "email"] })
@@ -79,7 +99,12 @@ app.get("/google",passport.authenticate("google", { scope: ["profile", "email"] 
 
 app.get("/google/callback",passport.authenticate("google", { failureRedirect: "/failed" }),
     function(req,res){
-      res.redirect("/success");
+      if (req.user.email.match(/[A-Za-z0-9]+@akgec\.ac\.in/g)) {
+        res.redirect("/success");
+      } else {
+        res.send("Login using college email only")
+      }
+      // res.redirect("/success");
      // res.send("success")
     }  
 );
@@ -94,10 +119,41 @@ function loggedIn(req, res, next) {
 
 // app.get("/test", )
 
+async function sendEmail(toAddress) {
+  try {
+    const transport = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: "simranyadav464@gmail.com",
+        clientId:"277985285628-560of7ar2drp5dl57go9sphegm3int6n.apps.googleusercontent.com",
+        clientSecret:"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",
+        accessToken:"ya29.a0AeTM1idxo4cAJu5Ya2NVKS2Hd-W0YoIAfshLKVa3ixpQLxhiOr9Va5sac5RmAAN6NTZNCtdbj6nfsKtb17_R0LNoz7UgUi5RXHfhpiwNly9EttmHDWa6_FRCOarR0Ck95MktbR_AweboT8XEo0jJDvgaV1v5aCgYKARcSARASFQHWtWOmTRP864ErVtgJUIJIwf47AA0163"
+      },
+    });
+ 
+    const mailOptions = {
+        from:"simranyadav464@gmail.com",
+        to: toAddress,
+        subject:"This is the confirmation email",
+        text:"Hello this is the body of the email",
+        html:"<h1>Successfully registered for HASHEZ </h1>"
+    }
+ 
+    const result = await transport.sendMail(mailOptions)
+ 
+    return result
+ 
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 app.post("/add/registered/user",async (req,res,next)=>{
   console.log(req.body)
-  console.log(req.body.email)
+    
+  // console.log(req.body)
+  // console.log(req.body.email)
   try {
     const userExist=await schema.findOne({email:req.body.email});
     
@@ -109,7 +165,7 @@ app.post("/add/registered/user",async (req,res,next)=>{
         branch:req.body.branch,
         year:req.body.year,
         student_number:req.body.student_number,
-        roll_number:req.body.student_roll
+        roll_number:req.body.roll_number
       })
       const userData=await registerUser.save();
        const token= await registerUser.generateAuthtoken();
@@ -117,22 +173,23 @@ app.post("/add/registered/user",async (req,res,next)=>{
       console.log(userData);
       console.log("registered Successfully");
       
-      let info=await transpoter.sendMail({
-        from:process.env.EMAIL_FROM,
-        to:[req.body.email,`${process.env.EMAIL_USER}`],
-        subject:"Registered Successfully",
-        html:`email:${req.body.email} <br>
-        userName:${req.body.uname}, <br>
-        pictureURL:${req.body.pname}, <br>
-        branch:${req.body.bname}, <br>
-        year:${req.body.yname}, <br>
-        student_number:${req.body.sno},<br>
-        roll_number:${req.body.srno},<br>`,
-      })
+      // let info=await emailService.sendMail({
+      //   from:"simranyadav464@gmail.com",
+      //   to:[req.body.email],
+      //   subject:"Registered Successfully",
+      //   html:`email:${req.body.email} <br>
+      //   userName:${req.body.uname}, <br>
+      //   pictureURL:${req.body.pname}, <br>
+      //   branch:${req.body.bname}, <br>
+      //   year:${req.body.yname}, <br>
+      //   student_number:${req.body.sno},<br>
+      //   roll_number:${req.body.srno},<br>`,
+      // })
       console.log("email send");
       res.redirect("/payment");
     }
     else if(userExist.payment_status==true){
+      sendEmail(req.body.email)
       res.redirect("/success");
     }
     else{
@@ -141,6 +198,7 @@ app.post("/add/registered/user",async (req,res,next)=>{
       res.cookie("email",token);
       res.redirect("/payment");
     }
+    
   } catch (e) {
     console.log(e);
     res.status(400).json({message:"Details missing"});
@@ -151,7 +209,7 @@ app.post("/add/registered/user",async (req,res,next)=>{
 
 app.get("/payment",loggedIn,(req,res,next)=>{
   try {
-    res.render("payment",{
+    res.render("pages/payment",{
       email:req.body.email,
     });
   } catch (error) {
@@ -167,7 +225,7 @@ app.post("/payments",loggedIn, async (req, res,next) => {
     });
 
     let order = await instance.orders.create({
-      amount: 1000,
+      amount: 50000,
       currency: "INR",
     });
     res.status(201).json({ success: true, order });
