@@ -1,62 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.2/css/all.css">
-  <link rel="stylesheet" href="css/payment.css">
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <title>RazorPay Demo</title>  
 </head>
-
 <body>
-  <div class="wrapper">
-    <div class="payment">
-      <div class="payment-logo">
-        <p>payment</p>
-      </div>
-      <h2>Razorpay Payment</h2>
-      <div id="rzp-button1" class="btn">
-        Pay Rs.500
-      </div>
+  <h1> Hello Payment Page</h1>
+  <h2>Make payment of Rs. 500 for successfull registeration in workshop</h2>
+  <button id="rzp-button1">Pay Rs.500 </button>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  document.getElementById("rzp-button1").oneClick = async function (e) {
+    e.preventDefault();
 
-    </div>
-  </div>
-  </div>
-  <script src="model/payment.js"></script>
-  <!-- <button id="rzp-button1">Pay</button> -->
-  <script>
-    document.getElementById('rzp-button1').onclick = async function (e) {
-      e.preventDefault();
-      let response = await fetch("/payment", {
-        method: "POST",
-        Headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: 1000,
-          currency: "INR",
-        }),
-      });
-      let orderData = await response.json();
-      var options = {
-        key: "rzp_test_42HT4PuykzwauI",
-        amount: "1000  ",
-        currency: "INR",
-        name: "hashez orkshop",
-        description: "Test Transaction",
-        order_id: orderData.order.id,
-        callback_url: "http://localhost:3000/paymentverification",
-        theme: {
-          color: "#3399cc"
-        }
-      };
-      var rzp1 = new Razorpay(options);
-      rzp1.open();
-    }
+    let response = await fetch("/payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: 50000,
+      }),
+    });
+
+    let orderData = await response.json();
+    console.log(orderData);
+
+    var options = {
+      key: "rzp_test_42HT4PuykzwauI",
+      amount: "50000",
+      currency: "INR",
+      order_id: orderData.id,
+      handler: function (response){
+        alert(response.razorpay_payment_id);
+        alert(response.razorpay_order_id);
+        alert(response.razorpay_signature);
+      },
+    };
+    var rzp1 = new RAzorpay(options);
+
+    rzp1.open();
+  };
   </script>
-</body >
-
-</html >
+  </body>
+  </html>
+  
