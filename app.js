@@ -183,7 +183,7 @@ app.get("/payment",loggedIn,(req,res,next)=>{
 
 
 app.post("/payment", async (req,res) => {
-  // let { amount } = req.body;
+  let { amount } = req.body;
 
   var instance = new Razorpay({
     key_id: "rzp_test_42HT4PuykzwauI",

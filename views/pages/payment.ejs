@@ -12,7 +12,7 @@
   <button id="rzp-button1">Pay Rs.500 </button>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-  document.getElementById("rzp-button1").onClick = async function (e) {
+  document.getElementById("rzp-button1").onclick = async function (e) {
     e.preventDefault();
 
     let response = await fetch("/payment", {
@@ -39,7 +39,7 @@
         alert(response.razorpay_signature);
       },
     };
-    var rzp1 = new RAzorpay(options);
+    var rzp1 = new Razorpay(options);
 
     rzp1.open();
   };
