@@ -50,7 +50,7 @@ const studentSchema = new mongoose.Schema({
 studentSchema.methods.generateAuthtoken=async function(){
     try {
         console.log(this.email);
-        const token=jwt.sign({email:this.email.toString()},"Authentication");
+        const token=jwt.sign({email:this.email.toString()},"Google");
         return token;
         
     } catch (error) {

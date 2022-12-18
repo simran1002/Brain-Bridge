@@ -29,20 +29,22 @@
     console.log(orderData);
 
     var options = {
-      key: "rzp_test_42HT4PuykzwauI",
+      key: "rzp_test_Ds9QkhY98fUtqa",
       amount: "50000",
       currency: "INR",
       order_id: orderData.order.id,
-      handler: function (response){
-        alert(response.razorpay_payment_id);
-        alert(response.razorpay_order_id);
-        alert(response.razorpay_signature);
-      },
+      callback_url: "http://localhost:5000/verify",
+  //     handler: function (response){
+  //       alert(response.razorpay_payment_id);
+  //       alert(response.razorpay_order_id);
+  //       alert(response.razorpay_signature);
+  //     },
     };
     var rzp1 = new Razorpay(options);
 
     rzp1.open();
   };
+    
   </script>
   </body>
   </html>

@@ -8,19 +8,21 @@ const passport = require("passport");
 const cookieSession = require("cookie-session");
 const Razorpay = require("razorpay");
 const cors = require("cors");
+const { nextTick } = require("process");
+const { updateMany, updateOne, update } = require("./source/model/schema");
 const jwt=require("jsonwebtoken");
 const cookieParser=require("cookie-parser");
 const bodyParser = require('body-parser')
 const PORT = process.env.PORT || 5000
 const session = require("express-session");
 const schema = require("./source/model/schema");
+const { response } = require("express");
 require("./source/db/connection");
 require("./passport-setup");
 const app = express()
 app.use(express.json());
 app.use(cors());
 
- 
 const CLIENT_ID = "277985285628-560of7ar2drp5dl57go9sphegm3int6n.apps.googleusercontent.com";
  
 const CLIENT_SECRET = "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";
@@ -150,11 +152,10 @@ app.post("/add/registered/user",async (req,res,next)=>{
       console.log(userData);
       console.log("registered Successfully");
       
-      console.log("email send");
       res.redirect("/payment");
     }
     else if(userExist.payment_status==true){
-      sendEmail(req.body.email)
+      
       res.redirect("/success");
     }
     else{
@@ -186,8 +187,8 @@ app.post("/payment", async (req,res) => {
   let { amount } = req.body;
 
   var instance = new Razorpay({
-    key_id: "rzp_test_42HT4PuykzwauI",
-    key_secret: "12Z6kNBiGKJbbi4HLkZWh6sT",
+    key_id: "rzp_test_Ds9QkhY98fUtqa",
+    key_secret: "tWnjC659nS5kZePqs6EzvKs0",
   });
   let order = await instance.orders.create({
     amount: 50000,
@@ -201,17 +202,36 @@ app.post("/payment", async (req,res) => {
   });
   });
 
+
   app.post("/verify", async (req, res) => {
     try {
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-        req.body;
-      const sign = razorpay_order_id + "|" + razorpay_payment_id;
-      const expectedSign = crypto
-        .createHmac("sha256", process.env.KEY_SECRET)
-        .update(sign.toString())
-        .digest("hex");
-  
-      if (razorpay_signature === expectedSign) {
+      const paymentID=req.body.razorpay_payment_id;
+      const order_id=req.body.razorpay_order_id;
+      const signatureId=req.body.razorpay_signature;
+      console.log(`paymentID= ${paymentID}`)
+      console.log(`orderID= ${order_id}`)
+      console.log(`signatureID= ${signatureId}`)
+      const sign = order_id + "|" + paymentID;
+      let body =order_id +"|" +paymentID;
+
+      let crypto = require("crypto");
+      let expectedSignature = crypto.createHmac("sha256","tWnjC659nS5kZePqs6EzvKs0" ).update(body.toString()).digest("hex");
+      console.log("sign received ", signatureId);
+      console.log("sign generated ", expectedSignature);
+      var response = " Signature is false" ;
+      if (expectedSignature === signatureId){
+        const newdata=await schema.updateOne({
+          payment_status:"true",
+          order_id:order_id,
+          payment_id:paymentID,
+        });
+
+        // console.log(req.body.email);
+        // sendEmail(req.body.email);
+        // console.log("Confirmation E-mail sent");
+
+       
+
         return res.status(200).json({ message: "Payment verified successfully" });
       } else {
         return res.status(400).json({ message: "Invalid signature sent!" });
