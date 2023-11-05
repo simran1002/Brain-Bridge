@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const nodemailer = require("nodemailer");
 const express = require("express");
+const session = require("express-session");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const { nextTick } = require("process");
