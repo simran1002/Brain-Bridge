@@ -1,8 +1,7 @@
 require("dotenv").config();
-
+const session = require("express-session");
 const nodemailer = require("nodemailer");
 const express = require("express");
-const session = require("express-session");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const { nextTick } = require("process");
@@ -26,12 +25,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
 
-app.use(session({
-  resave: false,
-  saveUninitialized: true,
-  secret: process.env.JWT_Key // Replace with your actual secret key
-}));
- []
+// app.use(session({
+//   resave: false,
+//   saveUninitialized: true,
+//   secret: process.env.JWT_KEY // Replace with your actual secret key
+// }));
+//  []
 
 app.post('/register',async (req, res) => {
   try {
@@ -62,11 +61,10 @@ app.post('/register',async (req, res) => {
 
 
   function generateToken(user) {
-    const payload = { userId: user._id, email: User.email };
+    const payload = { userId: user._id, email: user.email }; // Use user.email instead of User.email
     const token = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: '1h' });
     return token;
-  }
-  
+}
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     console.log("Login Done");
