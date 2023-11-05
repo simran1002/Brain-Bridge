@@ -184,79 +184,43 @@ async function sendEmail(toAddress) {
   }
 }
 
-app.post("/add/registered/user",async (req,res,next)=>{
-  console.log(req.body)
+// app.post("/add/registered/user",async (req,res,next)=>{
+//   console.log(req.body)
     
   
-  try {
-    const userExist=await schema.findOne({email:req.body.email});
+//   try {
+//     const userExist=await schema.findOne({email:req.body.email});
     
-    if(!userExist){
-      const registerUser=new schema({
-        email:req.body.email,
-        name:req.body.name,
-      })
-      const userData=await registerUser.save();
-       const token= await registerUser.generateAuthtoken();
-      res.cookie("email",token);
-      console.log(userData);
-      console.log("registered Successfully");
-    }
-    else if(userExist.payment_status==true){
+//     if(!userExist){
+//       const registerUser=new schema({
+//         email:req.body.email,
+//         name:req.body.name,
+//       })
+//       const userData=await registerUser.save();
+//        const token= await registerUser.generateAuthtoken();
+//       res.cookie("email",token);
+//       console.log(userData);
+//       console.log("registered Successfully");
+//     }
+//     else if(userExist.payment_status==true){
       
-      res.redirect("/success");
-    }
-    else{
-      console.log("User Already Exists")
-      const token= await userExist.generateAuthtoken();
-      res.cookie("email",token);
-    }
+//       res.redirect("/success");
+//     }
+//     else{
+//       console.log("User Already Exists")
+//       const token= await userExist.generateAuthtoken();
+//       res.cookie("email",token);
+//     }
     
-  } catch (e) {
-    console.log(e);
-    res.status(400).json({message:"Details missing"});
-  }
-})
+//   } catch (e) {
+//     console.log(e);
+//     res.status(400).json({message:"Details missing"});
+//   }
+// })
 
-  app.post("/verify", async (req, res) => {
-    try {
-      const paymentID=req.body.razorpay_payment_id;
-      const order_id=req.body.razorpay_order_id;
-      const signatureId=req.body.razorpay_signature;
-      console.log(`paymentID= ${paymentID}`)
-      console.log(`orderID= ${order_id}`)
-      console.log(`signatureID= ${signatureId}`)
-      const sign = order_id + "|" + paymentID;
-      let body =order_id +"|" +paymentID;
-
-      let crypto = require("crypto");
-      let expectedSignature = crypto.createHmac("sha256","tWnjC659nS5kZePqs6EzvKs0" ).update(body.toString()).digest("hex");
-      console.log("sign received ", signatureId);
-      console.log("sign generated ", expectedSignature);
-      var response = " Signature is false" ;
-      if (expectedSignature === signatureId){
-        const newdata=await schema.updateOne({
-          payment_status:"true",
-          order_id:order_id,
-          payment_id:paymentID,
-        });
-
-        // console.log(req.body.email);
-        // sendEmail(req.body.email);
-        // console.log("Confirmation E-mail sent");
-
-       
-
-        return res.status(200).json({ message: "Payment verified successfully" });
-      } else {
-        return res.status(400).json({ message: "Invalid signature sent!" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: "Internal Server Error!" });
-      console.log(error);
-    }
-  });
   
+ 
+
 
 app.listen(PORT,() => {
     console.log(`Server is running at Port ${PORT}`);
