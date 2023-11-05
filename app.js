@@ -194,12 +194,7 @@ app.post("/add/registered/user",async (req,res,next)=>{
     if(!userExist){
       const registerUser=new schema({
         email:req.body.email,
-        name:req.body.userName,
-        profileurl:req.body.pictureURL,
-        branch:req.body.branch,
-        year:req.body.year,
-        student_number:req.body.student_number,
-        roll_number:req.body.roll_number
+        name:req.body.name,
       })
       const userData=await registerUser.save();
        const token= await registerUser.generateAuthtoken();
