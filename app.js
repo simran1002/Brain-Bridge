@@ -9,7 +9,6 @@ const jwt=require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const bodyParser = require('body-parser')
 const PORT = process.env.PORT || 8000
-const session = require("express-session");
 const User = require("./source/model/schema");
 const { response } = require("express");
 const Games = require("./source/model/games");
@@ -26,11 +25,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
 
-app.use(session({
-  resave: false,
-  saveUninitialized: true,
-  secret: process.env.JWT_Key 
-}));
+// app.use(session({
+//   resave: false,
+//   saveUninitialized: true,
+//   secret: process.env.JWT_Key 
+// }));
 
 app.post('/register',async (req, res) => {
   try {
@@ -59,14 +58,51 @@ app.post('/register',async (req, res) => {
     };
   });
 
+
+  function generateToken(user) {
+    const payload = { userId: user._id, email: User.email };
+    const token = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: '1h' });
+    return token;
+  }
+  
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    console.log("Login Done");
+    try {
+      const UserID = await User.findOne({ email });
+      console.log("login user id->",UserID);
+      if (!UserID) {
+        return res.status(401).json({ message: 'Login Successfully not' });
+      }
+  
+      console.log("password->",password);
+      console.log("userhased password=>",UserID.password);
+      const passwordMatch = await bcrypt.compare(password, UserID.password);
+      console.log("password match->",passwordMatch);
+      if (!passwordMatch) {
+        const err = new Error('Enter the correct password');
+        err.status = 401;
+        throw err;
+      };
+  
+      const token = generateToken(UserID);
+      console.log("token->",token);
+      res.status(200).json({ message: 'Login successful', token });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+
 // Route to verify OTP
 app.post('/verifyotp', async (req, res) => {
-  const { AadharNumber } = req.body;
+  const { email } = req.body;
   const { enteredOTP } = req.body;
 
   try {
     // Retrieve the stored OTP data using Mongoose
-    const otp_Data = await otpData.findOne({ AadharNumber });
+    const otp_Data = await otpData.findOne({ email });
     console.log(otp_Data);
 
     if (!otp_Data) {
@@ -80,7 +116,7 @@ app.post('/verifyotp', async (req, res) => {
 
     if (enteredOTP === otp_Data.OTP) {
       // If the OTP is verified, you should delete the OTP record from the database
-      await otp_Data.deleteOne({ AadharNumber });
+      await otp_Data.deleteOne({ email });
       res.status(200).json({ message: 'Your OTP verified successfully' });
     } else {
       res.status(401).json({ message: 'OTP verified successfully' });
