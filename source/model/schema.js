@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const jwt=require("jsonwebtoken");
 
-const studentSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     name:  {
         type:String,
         required: true
@@ -11,43 +11,25 @@ const studentSchema = new mongoose.Schema({
         required: true,
         unique:true
     },
-    profileurl:  {
+    gender:  {
         type:String,
         required: true
     },
-    branch:  {
+    age:  {
         type:String,
         required: true
     },
-    year:  {
-        type:Number,
+    password: {
+        type:String,
         required: true
     },
-    student_number:  {
-        type:Number,
-        required: true,
-        unique: true
-    },
-    roll_number:  {
-        type:Number,
-        required: true,
-        unique: true
-    },
-    payment_status:{
-        type:Boolean,
-        default:false,
-    },
-    order_id:{
+    phoneNumber:{
         type:String,
-        default:"NULL"
-    },
-    payment_id:{
-        type:String,
-        default:"NULL",
+        required: true
     }
 })
 
-studentSchema.methods.generateAuthtoken=async function(){
+userSchema.methods.generateAuthtoken=async function(){
     try {
         console.log(this.email);
         const token=jwt.sign({email:this.email.toString()},"Google");
@@ -58,7 +40,7 @@ studentSchema.methods.generateAuthtoken=async function(){
     }
 }
 
-const Schema = new mongoose.model("schema", studentSchema);
+const Schema = new mongoose.model("schema", userSchema);
 
 module.exports= Schema;
 

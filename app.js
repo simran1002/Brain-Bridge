@@ -2,101 +2,121 @@ require("dotenv").config();
 
 const nodemailer = require("nodemailer");
 const express = require("express");
-const path = require("path");
-const ejs = require("ejs");
-const passport = require("passport");
-const cookieSession = require("cookie-session");
-const Razorpay = require("razorpay");
 const cors = require("cors");
+const dotenv = require("dotenv");
 const { nextTick } = require("process");
-const { updateMany, updateOne, update } = require("./source/model/schema");
 const jwt=require("jsonwebtoken");
-const cookieParser=require("cookie-parser");
+const bcrypt = require("bcrypt");
 const bodyParser = require('body-parser')
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 8000
 const session = require("express-session");
-const schema = require("./source/model/schema");
+const User = require("./source/model/schema");
 const { response } = require("express");
+const Games = require("./source/model/games");
 require("./source/db/connection");
-require("./passport-setup");
 const app = express()
 app.use(express.json());
 app.use(cors());
 
 
-const CLIENT_ID = "277985285628-560of7ar2drp5dl57go9sphegm3int6n.apps.googleusercontent.com";
- 
-const CLIENT_SECRET = "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";
-
-
-
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
-app.use(cookieParser());
 
 
 app.use(session({
   resave: false,
   saveUninitialized: true,
-  secret: 'bla bla bla' 
+  secret: process.env.JWT_Key 
 }));
 
-const views_path = path.join(__dirname,  "./views/pages");
-const static_path = path.join(__dirname, "/public");
-app.use(express.static(static_path ))
-app.use(passport.initialize());
-app.use(passport.session());
-app.set("view engine", "ejs");
+app.post('/register',async (req, res) => {
+  try {
+    const { name, email, gender, age,password, phoneNumber } = req.body;
 
-
-app.get('/',(req,res)=> {
-      
-    res.render("pages/index")
-})
-
-
-app.get('/pages/login',(req,res) => {
-    res.render('pages/login');
-})
-
-app.get("/google",passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-
-app.get("/google/callback",passport.authenticate("google", { failureRedirect: "/failed" }),
-    function(req,res){
-      if (req.user.email.match(/[A-Za-z0-9]+@akgec\.ac\.in/g)) {
-        res.redirect("/success");
-      } else {
-        res.send("Login using college email only")
-      }
-    }  
-);
-
-
-app.get('/success',(req,res) => {
-  if(req.isAuthenticated()) {
-    const userDetails = {
-      email: req.user.email,
-      name: req.user.name.givenName + " " + req.user.name.familyName,
-      profileURL: req.user.picture
+    // Validate the input data (add more validation as needed)
+    if (!name || !email || !gender || !age || !password || !phoneNumber) {
+      return res.status(400).json({ error: 'All fields are required' });
     }
-    res.render("pages/register", {userDetailsNew: userDetails})
-  } else {
-    res.redirect("/")
-  }   
-})
 
+    // Check if the user already exists (e.g., based on email or AadharNumber)
+    const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
+    if (existingUser) {
+      return res.status(409).json({ error: 'User with the same email or AadharNumber already exists' });
+    }
 
-function loggedIn(req, res, next) {
-  if (req.user) {
-      next();
-  } else {
-      res.redirect('/google');
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    const Schema = new User({ name, email,gender, password: hashedPassword, age , phoneNumber});
+    await Schema.save();
+
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Registration failed' });
+      console.error('User registration error:', error);
+    };
+  });
+
+// Route to verify OTP
+app.post('/verifyotp', async (req, res) => {
+  const { AadharNumber } = req.body;
+  const { enteredOTP } = req.body;
+
+  try {
+    // Retrieve the stored OTP data using Mongoose
+    const otp_Data = await otpData.findOne({ AadharNumber });
+    console.log(otp_Data);
+
+    if (!otp_Data) {
+      return res.status(400).json({ message: 'OTP not found' });
+    }
+
+    // Check if the OTP has expired
+    if (Date.now() > otp_Data.expiresAt) {
+      return res.status(400).json({ message: 'OTP has expired' });
+    }
+
+    if (enteredOTP === otp_Data.OTP) {
+      // If the OTP is verified, you should delete the OTP record from the database
+      await otp_Data.deleteOne({ AadharNumber });
+      res.status(200).json({ message: 'Your OTP verified successfully' });
+    } else {
+      res.status(401).json({ message: 'OTP verified successfully' });
+    }
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
-}
+});
 
+
+// app.get("/google",passport.authenticate("google", { scope: ["profile", "email"] })
+// );
+
+// app.get("/google/callback",passport.authenticate("google", { failureRedirect: "/failed" }),
+//     function(req,res){
+//       if (req.user.email.match(/[A-Za-z0-9]+@akgec\.ac\.in/g)) {
+//         res.redirect("/success");
+//       } else {
+//         res.send("Login using college email only")
+//       }
+//     }  
+// );
+
+// app.get('/success',(req,res) => {
+//   if(req.isAuthenticated()) {
+//     const userDetails = {
+//       email: req.user.email,
+//       name: req.user.name.givenName + " " + req.user.name.familyName,
+//       profileURL: req.user.picture
+//     }
+//     res.render("pages/register", {userDetailsNew: userDetails})
+//   } else {
+//     res.redirect("/")
+//   }   
+// })
 
 async function sendEmail(toAddress) {
   try {
@@ -128,8 +148,6 @@ async function sendEmail(toAddress) {
   }
 }
 
-
-
 app.post("/add/registered/user",async (req,res,next)=>{
   console.log(req.body)
     
@@ -152,8 +170,6 @@ app.post("/add/registered/user",async (req,res,next)=>{
       res.cookie("email",token);
       console.log(userData);
       console.log("registered Successfully");
-      
-      res.redirect("/payment");
     }
     else if(userExist.payment_status==true){
       
@@ -163,7 +179,6 @@ app.post("/add/registered/user",async (req,res,next)=>{
       console.log("User Already Exists")
       const token= await userExist.generateAuthtoken();
       res.cookie("email",token);
-      res.redirect("/payment");
     }
     
   } catch (e) {
@@ -171,38 +186,6 @@ app.post("/add/registered/user",async (req,res,next)=>{
     res.status(400).json({message:"Details missing"});
   }
 })
-
-
-app.get("/payment",loggedIn,(req,res,next)=>{
-  try {
-    res.render("pages/payment",{
-      email:req.body.email,
-    });
-  } catch (error) {
-    console.log(error);
-  }
-})
-
-
-app.post("/payment", async (req,res) => {
-  let { amount } = req.body;
-
-  var instance = new Razorpay({
-    key_id: "rzp_test_Ds9QkhY98fUtqa",
-    key_secret: "tWnjC659nS5kZePqs6EzvKs0",
-  });
-  let order = await instance.orders.create({
-    amount: 50000,
-    currency: "INR",
-    receipt: "receipt#1",
-  });
-  res.status(201).json({
-    success: true,
-    order,
-    amount,
-  });
-  });
-
 
   app.post("/verify", async (req, res) => {
     try {
@@ -245,5 +228,5 @@ app.post("/payment", async (req,res) => {
   
 
 app.listen(PORT,() => {
-    console.log(`App is running at Port ${PORT}`);
+    console.log(`Server is running at Port ${PORT}`);
 });
