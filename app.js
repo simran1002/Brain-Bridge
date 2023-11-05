@@ -25,11 +25,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
 
-// app.use(session({
-//   resave: false,
-//   saveUninitialized: true,
-//   secret: process.env.JWT_Key 
-// }));
+app.use(session({
+  resave: false,
+  saveUninitialized: true,
+  secret: process.env.JWT_Key // Replace with your actual secret key
+}));
+ []
 
 app.post('/register',async (req, res) => {
   try {
@@ -43,7 +44,7 @@ app.post('/register',async (req, res) => {
     // Check if the user already exists (e.g., based on email or AadharNumber)
     const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingUser) {
-      return res.status(409).json({ error: 'User with the same email or AadharNumber already exists' });
+      return res.status(409).json({ error: 'User with the same email or phoneNumber already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 8);
