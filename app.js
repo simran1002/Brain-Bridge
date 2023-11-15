@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const express = require("express");
 const router = express.Router();
 const cors = require("cors");
+const otpGenerator = require('otp-generator');
 const crypto = require("crypto");
 const dotenv = require("dotenv");
 const { nextTick } = require("process");
@@ -44,59 +45,50 @@ app.post('/register',async (req, res) => {
     const Schema = new User({ name, email,gender, password: hashedPassword, age , phoneNumber});
     await Schema.save();
 
+    // Validate the email
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+  const smtpConfig = {
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  };
+  
+  // Create a Nodemailer transporter
+  const transporter = nodemailer.createTransport(smtpConfig);
+  
+  // Generate a random OTP
+  const otp = otpGenerator.generate(6, { upperCase: false, specialChars: false });
+  const OTP = new OTPModel({ email, OTP: otp });
+  await OTP.save();
+  
+  // Email content
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: 'The OTP verification code for your email',
+    text: `Your OTP of E-mail verification is: ${otp}`,
+  };
+  
+  // Send email with the OTP
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.error(error);
+    }
+    console.log('Email sent: ' + info.response);
+  });
+
+
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Registration failed' });
       console.error('User registration error:', error);
     };
-  });
-
-// Function to generate a random OTP
-const generateOTP = () => {
-  return crypto.randomBytes(3).toString('hex').toUpperCase();
-};
-
-// Function to send OTP via email
-const sendOTP = async (email) => {
-  // Generate OTP
-  const otp = generateOTP();
-
-  // Create a nodemailer transporter using your email service provider's SMTP details
-  const transporter = nodemailer.createTransport({
-    service: 'Gmail', // Replace with your email service provider
-    auth: {
-      user: 'simrany6387@gmail.com', // Replace with your email
-      pass: 'febhitfzmwltjtbk' // Replace with your email password
-    }
-  });
-
-  // Email configuration
-  const mailOptions = {
-    from: 'simrany6387@gmail.com', // Replace with your email
-    to: email,
-    subject: 'Your OTP for verification',
-    text: `Your OTP is: ${otp}`
-  };
-
-  try {
-    // Send email
-    await transporter.sendMail(mailOptions);
-    console.log('OTP sent successfully');
-    return otp;
-  } catch (error) {
-    console.error('Error sending OTP:', error);
-    throw error;
-  }
-};
-
-// Example usage
-const userEmail = 'recipient@example.com'; // Replace with the recipient's email address
-sendOTP(userEmail)
-  .then((otp) => {
-    console.log('Generated OTP:', otp);
-  })
-  .catch((error) => {
-    console.error('Error:', error);
   });
 
 function generateToken(user) {
@@ -108,18 +100,13 @@ function generateToken(user) {
 //user login details
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    console.log("Login Done");
     try {
       const UserID = await User.findOne({ email });
-      console.log("login user id->",UserID);
       if (!UserID) {
         return res.status(401).json({ message: 'Login Successfully not' });
       }
   
-      console.log("password->",password);
-      console.log("userhased password=>",UserID.password);
       const passwordMatch = await bcrypt.compare(password, UserID.password);
-      console.log("password match->",passwordMatch);
       if (!passwordMatch) {
         const err = new Error('Enter the correct password');
         err.status = 401;
