@@ -1,15 +1,18 @@
 require("dotenv").config();
-const session = require("express-session");
+
 const nodemailer = require("nodemailer");
 const express = require("express");
+const router = express.Router();
 const cors = require("cors");
+const crypto = require("crypto");
 const dotenv = require("dotenv");
 const { nextTick } = require("process");
 const jwt=require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const bodyParser = require('body-parser')
 const PORT = process.env.PORT || 8000
-const User = require("./source/model/schema");
+const User = require("./source/model/user");
+const OTPModel = require("./source/model/otp");
 const { response } = require("express");
 const Games = require("./source/model/games");
 require("./source/db/connection");
@@ -17,20 +20,9 @@ const app = express()
 app.use(express.json());
 app.use(cors());
 
-
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
-
-
-// app.use(session({
-//   resave: false,
-//   saveUninitialized: true,
-//   secret: process.env.JWT_KEY // Replace with your actual secret key
-// }));
-//  []
 
 app.post('/register',async (req, res) => {
   try {
@@ -59,12 +51,61 @@ app.post('/register',async (req, res) => {
     };
   });
 
+// Function to generate a random OTP
+const generateOTP = () => {
+  return crypto.randomBytes(3).toString('hex').toUpperCase();
+};
 
-  function generateToken(user) {
+// Function to send OTP via email
+const sendOTP = async (email) => {
+  // Generate OTP
+  const otp = generateOTP();
+
+  // Create a nodemailer transporter using your email service provider's SMTP details
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail', // Replace with your email service provider
+    auth: {
+      user: 'simrany6387@gmail.com', // Replace with your email
+      pass: 'febhitfzmwltjtbk' // Replace with your email password
+    }
+  });
+
+  // Email configuration
+  const mailOptions = {
+    from: 'simrany6387@gmail.com', // Replace with your email
+    to: email,
+    subject: 'Your OTP for verification',
+    text: `Your OTP is: ${otp}`
+  };
+
+  try {
+    // Send email
+    await transporter.sendMail(mailOptions);
+    console.log('OTP sent successfully');
+    return otp;
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    throw error;
+  }
+};
+
+// Example usage
+const userEmail = 'recipient@example.com'; // Replace with the recipient's email address
+sendOTP(userEmail)
+  .then((otp) => {
+    console.log('Generated OTP:', otp);
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+
+function generateToken(user) {
     const payload = { userId: user._id, email: user.email }; // Use user.email instead of User.email
     const token = jwt.sign(payload, process.env.JWT_KEY, { expiresIn: '1h' });
     return token;
 }
+
+//user login details
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     console.log("Login Done");
@@ -94,7 +135,6 @@ app.post('/login', async (req, res) => {
     }
   });
 
-
 // Route to verify OTP
 app.post('/verifyotp', async (req, res) => {
   const { email } = req.body;
@@ -102,7 +142,7 @@ app.post('/verifyotp', async (req, res) => {
 
   try {
     // Retrieve the stored OTP data using Mongoose
-    const otp_Data = await otpData.findOne({ email });
+    const otp_Data = await OTPModel.findOne({ email });
     console.log(otp_Data);
 
     if (!otp_Data) {
@@ -126,100 +166,6 @@ app.post('/verifyotp', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
-
-// app.get("/google",passport.authenticate("google", { scope: ["profile", "email"] })
-// );
-
-// app.get("/google/callback",passport.authenticate("google", { failureRedirect: "/failed" }),
-//     function(req,res){
-//       if (req.user.email.match(/[A-Za-z0-9]+@akgec\.ac\.in/g)) {
-//         res.redirect("/success");
-//       } else {
-//         res.send("Login using college email only")
-//       }
-//     }  
-// );
-
-// app.get('/success',(req,res) => {
-//   if(req.isAuthenticated()) {
-//     const userDetails = {
-//       email: req.user.email,
-//       name: req.user.name.givenName + " " + req.user.name.familyName,
-//       profileURL: req.user.picture
-//     }
-//     res.render("pages/register", {userDetailsNew: userDetails})
-//   } else {
-//     res.redirect("/")
-//   }   
-// })
-
-async function sendEmail(toAddress) {
-  try {
-    const transport = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: "simranyadav464@gmail.com",
-        clientId:"277985285628-560of7ar2drp5dl57go9sphegm3int6n.apps.googleusercontent.com",
-        clientSecret:"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",
-        accessToken:"ya29.a0AeTM1idxo4cAJu5Ya2NVKS2Hd-W0YoIAfshLKVa3ixpQLxhiOr9Va5sac5RmAAN6NTZNCtdbj6nfsKtb17_R0LNoz7UgUi5RXHfhpiwNly9EttmHDWa6_FRCOarR0Ck95MktbR_AweboT8XEo0jJDvgaV1v5aCgYKARcSARASFQHWtWOmTRP864ErVtgJUIJIwf47AA0163"
-      },
-    });
- 
-    const mailOptions = {
-        from:"simranyadav464@gmail.com",
-        to: toAddress,
-        subject:"This is the confirmation email",
-        text:"Hello this is the body of the email",
-        html:"<h1>Successfully registered for HASHEZ </h1>"
-    }
- 
-    const result = await transport.sendMail(mailOptions)
- 
-    return result
- 
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-// app.post("/add/registered/user",async (req,res,next)=>{
-//   console.log(req.body)
-    
-  
-//   try {
-//     const userExist=await schema.findOne({email:req.body.email});
-    
-//     if(!userExist){
-//       const registerUser=new schema({
-//         email:req.body.email,
-//         name:req.body.name,
-//       })
-//       const userData=await registerUser.save();
-//        const token= await registerUser.generateAuthtoken();
-//       res.cookie("email",token);
-//       console.log(userData);
-//       console.log("registered Successfully");
-//     }
-//     else if(userExist.payment_status==true){
-      
-//       res.redirect("/success");
-//     }
-//     else{
-//       console.log("User Already Exists")
-//       const token= await userExist.generateAuthtoken();
-//       res.cookie("email",token);
-//     }
-    
-//   } catch (e) {
-//     console.log(e);
-//     res.status(400).json({message:"Details missing"});
-//   }
-// })
-
-  
- 
 
 
 app.listen(PORT,() => {

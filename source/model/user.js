@@ -30,18 +30,7 @@ const userSchema = new mongoose.Schema({
     }
 })
 
-userSchema.methods.generateAuthtoken=async function(){
-    try {
-        console.log(this.email);
-        const token=jwt.sign({email:this.email.toString()},"Google");
-        return token;
-        
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-const Schema = new mongoose.model("schema", userSchema);
+const Schema = new mongoose.model("user", userSchema);
 
 module.exports= Schema;
 
